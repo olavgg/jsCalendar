@@ -1,6 +1,8 @@
 jsCalendar
 ==========
 
+![screenshot](http://imgur.com/IuLhQim.png)
+
 Javascript Calendar, works inn all browsers, including IE6. Supports for multiple languages(English, Norwegian are in there) and custom styling. No additional javascript libraries needed. Not even jQuery.
 Code should be easy to read and modify for your needs.
 
