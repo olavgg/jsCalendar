@@ -1,0 +1,1219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <title>Response-JSCalendar</title>
+</head>
+<body>
+<script type="text/javascript">
+if (typeof Response == 'undefined'){
+    var Response = {};
+    Response.Widgets = {};
+}
+
+Response.Utilities = (function(){
+    var startPos = navigator.appVersion.indexOf("MSIE");
+    var PUBLIC = {
+        clientBrowserIsInternetExplorer: function()
+        {
+            if (startPos == -1){
+                return false;
+            }
+            return true;
+        },
+        getInternetExplorerVersion: function(version)
+        {
+            if (startPos > -1){
+                var IE_Version = navigator.appVersion.substr(startPos+5, 3);
+                if (IE_Version === version+".0"){
+                    return true;
+                }
+            }
+            return false;
+        },
+        isOldIE: function(){
+            if(PUBLIC.clientBrowserIsInternetExplorer()){
+                if(PUBLIC.getInternetExplorerVersion(6)){
+                    return true;
+                }
+                else if(PUBLIC.getInternetExplorerVersion(7)){
+                    return true;
+                }
+            }
+            return false;
+        }
+    };
+    return PUBLIC;
+})();
+
+Response.Collections = (function() {
+    return {
+        Dictionary: function(){
+            var self = {};
+            self.index = 0;
+            return{
+                add: function(key, value){
+                    self.index += 1;
+                    return this[key] = value;
+                },
+                setValue: function(key, value){
+                    this[key] = value;
+                },
+                getValue: function(key){
+                    return this[key];
+                },
+                remove: function(key){
+                    delete this[key];
+                },
+                exist: function(key){
+                    if(this[key]){
+                        return true;
+                    }
+                    else{
+                        return false;
+                    }
+                },
+                getIndex: function(){
+                    return self.index;
+                }
+            };
+        }
+    };
+})();
+
+Response.Collections.Cookie = (function() {
+    var PUBLIC = {
+        deleteCookie: function(key){
+            key +="=";
+            var allCookies = document.cookie;
+            var start = allCookies.indexOf(key);
+            var end = allCookies.indexOf(";", start)+1;
+            document.cookie =
+                allCookies.substring(0,end)+
+                " expires=Thu, 01-Jan-70 00:00:01 GMT;"+
+                allCookies.substring(end,allCookies.length);
+        }
+    }; return PUBLIC;
+})();
+
+Response.Widgets.Window = (function () {
+    var self = {};
+    self.windows = new Response.Collections.Dictionary();
+    return {
+        getWindows: function(){
+            return self.windows;
+        },
+        Window: function(width, height, top, left, id){
+            var self = {};
+            self.element = document.createElement("div");
+            self.element.style.position = "absolute";
+            self.element.style.width = width;
+            self.element.style.height = height;
+            self.element.style.top = top;
+            self.element.style.left = left;
+            self.element.style.background = "white";
+            self.element.style.border = "1px solid black";
+            self.element.style.zIndex = 100;
+            self.element.id = id;
+            return{
+                id: self.element.id,
+                element: self.element,
+                setHTML: function(html){
+                    self.element.innerHTML = html;
+                }
+            };
+        },
+        CreateWindow: function(width, height, top, left, html, id){
+            // If dialog exists, do not create a new dialog
+            if(!self.windows.exist(id)){
+                var dialog = new Response.Widgets.Window.Window(width, height, top, left, id);
+                dialog.setHTML(html);
+                document.getElementById("body").appendChild(dialog.element);
+                self.windows.add(dialog.id,dialog);
+                return dialog;
+            }
+            return false;
+        },
+        DestroyWindow: function(node){
+            if(node){
+                self.windows.remove(node.id);
+                node.parentNode.removeChild(node);
+            }
+        },
+        CreateTitleWindow: function(text){
+            if(!self.windows.exist("response_title_window")){
+                var dialog = new Response.Widgets.Window.Window("auto", "auto", "auto", "auto", "response_title_window");
+                dialog.setHTML(text);
+                dialog.element.style.padding = "0.5em";
+                document.getElementById("response_calendar_day_title").appendChild(dialog.element);
+                self.windows.add(dialog.id,dialog);
+            }
+            return false;
+        }
+    }
+})();
+
+
+Response.Widgets.Calendar = (function () {
+    return {
+        CalendarObjectCounter: 0,
+        DateObject: function(){
+            var PUBLIC = {
+                setDateNumber: function(dateNumber){
+                    this.dateNumber = dateNumber;
+                },
+                setMonthNumber: function(monthNumber){
+                    this.monthNumber = monthNumber;
+                },
+                setThisMonth: function(thisMonth){
+                    this.thisMonth = thisMonth;
+                },
+                getDateNumber: function(){
+                    return this.dateNumber;
+                },
+                setFullDate: function(daysDate){
+                    this.daysDate = daysDate;
+                },
+                setToday: function(date){
+                    this.todaysDate = date;
+                },
+                setSelectedDate: function(date){
+                    this.selectedDate = date;
+                },
+                isToday: function(){
+                    return this.todaysDate;
+                },
+                isSelectedDate: function(){
+                    return this.selectedDate;
+                },
+                getFullDate: function(){
+                    return this.daysDate;
+                },
+                getMonthNumber: function(){
+                    return this.monthNumber;
+                },
+                getThisMonth: function(){
+                    return this.thisMonth;
+                },
+                getSelectedDate: function(){
+                    return this.selectedDate;
+                }
+            };
+            return PUBLIC;
+        },
+        Text: function(){
+            // English Text
+            var englishTexts = new Response.Collections.Dictionary();
+            englishTexts.add("language", "en");
+            englishTexts.add("January", "January");
+            englishTexts.add("February", "February");
+            englishTexts.add("March", "March");
+            englishTexts.add("April", "April");
+            englishTexts.add("May", "May");
+            englishTexts.add("June", "June");
+            englishTexts.add("July", "July");
+            englishTexts.add("August", "August");
+            englishTexts.add("September", "September");
+            englishTexts.add("October", "October");
+            englishTexts.add("November", "November");
+            englishTexts.add("December", "December");
+            englishTexts.add("Monday", "Monday");
+            englishTexts.add("Tuesday", "Tuesday");
+            englishTexts.add("Wednesday", "Wednesday");
+            englishTexts.add("Thursday", "Thursday");
+            englishTexts.add("Friday", "Friday");
+            englishTexts.add("Saturday", "Saturday");
+            englishTexts.add("Sunday", "Sunday");
+            englishTexts.add("Week", "Week");
+            englishTexts.add("Today", "Today");
+
+            // Nynorsk Norwegian Text
+            var nynorskTexts = new Response.Collections.Dictionary();
+            nynorskTexts.add("language", "nn");
+            nynorskTexts.add("January", "Januar");
+            nynorskTexts.add("February", "Februar");
+            nynorskTexts.add("March", "Mars");
+            nynorskTexts.add("April", "April");
+            nynorskTexts.add("May", "Mai");
+            nynorskTexts.add("June", "Juni");
+            nynorskTexts.add("July", "Juli");
+            nynorskTexts.add("August", "August");
+            nynorskTexts.add("September", "September");
+            nynorskTexts.add("October", "Oktober");
+            nynorskTexts.add("November", "November");
+            nynorskTexts.add("December", "Desember");
+            nynorskTexts.add("Monday", "Måndag");
+            nynorskTexts.add("Tuesday", "Tysdag");
+            nynorskTexts.add("Wednesday", "Onsdag");
+            nynorskTexts.add("Thursday", "Torsdag");
+            nynorskTexts.add("Friday", "Fredag");
+            nynorskTexts.add("Saturday", "Laurdag");
+            nynorskTexts.add("Sunday", "Sundag");
+            nynorskTexts.add("Week", "Veke");
+            nynorskTexts.add("Today", "Idag");
+
+            // Bokmål Norwegian Text
+            var bokmaalTexts = new Response.Collections.Dictionary();
+            bokmaalTexts.add("language", "nb");
+            bokmaalTexts.add("January", "Januar");
+            bokmaalTexts.add("February", "Februar");
+            bokmaalTexts.add("March", "Mars");
+            bokmaalTexts.add("April", "April");
+            bokmaalTexts.add("May", "Mai");
+            bokmaalTexts.add("June", "Juni");
+            bokmaalTexts.add("July", "Juli");
+            bokmaalTexts.add("August", "August");
+            bokmaalTexts.add("September", "September");
+            bokmaalTexts.add("October", "Oktober");
+            bokmaalTexts.add("November", "November");
+            bokmaalTexts.add("December", "Desember");
+            bokmaalTexts.add("Monday", "Mandag");
+            bokmaalTexts.add("Tuesday", "Tirsdag");
+            bokmaalTexts.add("Wednesday", "Onsdag");
+            bokmaalTexts.add("Thursday", "Torsdag");
+            bokmaalTexts.add("Friday", "Fredag");
+            bokmaalTexts.add("Saturday", "Lørdag");
+            bokmaalTexts.add("Sunday", "Søndag");
+            bokmaalTexts.add("Week", "Uke");
+            bokmaalTexts.add("Today", "Idag");
+
+            var PRIVATE = {
+                currentLanguage: englishTexts,
+                languages: [englishTexts, nynorskTexts, bokmaalTexts]
+            };
+            var PUBLIC = {
+                setLanguage: function(language){
+                    for (var i = 0; i < PRIVATE.languages.length; i++){
+                        if (PRIVATE.languages[i].getValue("language") === language){
+                            PRIVATE.currentLanguage = PRIVATE.languages[i];
+                        }
+                    }
+                },
+                // Param: month number 0- 11
+                getMonthText: function(month){
+                    var months =
+                        [
+                            "January",
+                            "February",
+                            "March",
+                            "April",
+                            "May",
+                            "June",
+                            "July",
+                            "August",
+                            "September",
+                            "October",
+                            "November",
+                            "December"
+                        ];
+                    return PRIVATE.currentLanguage.getValue(months[month]);
+                },
+                // Param: daynumber 0- 6
+                getDayText: function (day){
+                    var days =
+                    [
+                        "Monday",
+                        "Tuesday",
+                        "Wednesday",
+                        "Thursday",
+                        "Friday",
+                        "Saturday",
+                        "Sunday"
+                    ];
+                    return PRIVATE.currentLanguage.getValue(days[day]);
+                },
+                getText: function(key){
+                    return PRIVATE.currentLanguage.getValue(key);
+                }
+            };
+            return PUBLIC;
+        },
+        CalendarObject: function(inputElement, date, type, lang, theme, size, multiple){
+            Response.Widgets.Calendar.CalendarObjectCounter += 1;
+            var PRIVATE = {
+                createCalendarMainElement: function(){
+                    var mainElement = document.createElement('span');
+                    mainElement.id =
+                        "ResponseCalendarMainElement"+PRIVATE.calendarId;
+                    mainElement.style.cssText =
+                        PRIVATE.theme.getValue("CalendarMainElement");
+                    return mainElement;
+                },
+                createCalendarWeekAndDayRow: function(element){
+                    // Row with week and day names
+                    var weekAndDayRow = element.insertRow(-1);
+                    var cells = PRIVATE.getCalendarHeaderColumns();
+                    for(var i = 0; i < cells.length; i++){
+                        var newCell = weekAndDayRow.insertCell(-1);
+                        newCell.innerHTML = cells[i];
+                        newCell.style.cssText =
+                            PRIVATE.theme.getValue("CalendarDayWeekCellSize");
+                    }
+                    weekAndDayRow.style.cssText =
+                        PRIVATE.theme.getValue("smallTextCell")+
+                        PRIVATE.theme.getValue("TextAlignCenter");
+                },
+                createCalendarTableElement: function(){
+                    var table = document.createElement('table');
+                    table.id =
+                        "ResponseCalendarTable"+PRIVATE.calendarId;
+                    table.style.cssText =
+                        PRIVATE.theme.getValue("CalendarTable");
+                    return table;
+                },
+                setNewDate: function(date){
+                    PUBLIC.setCurrentDate(date);
+                    PRIVATE.flushCalendar();
+                    PUBLIC.drawCalendar();
+                },
+                flushCalendar: function(){
+                    for (var i = PRIVATE.calendarTableElement.rows.length; i > 0; i--)
+                    {
+                        PRIVATE.calendarTableElement.deleteRow(i-1);
+                    }
+                    PRIVATE.calendarMainElement.removeChild(
+                        PRIVATE.calendarHeaderElement);
+                    PRIVATE.calendarMainElement.removeChild(
+                        PRIVATE.calendarBottomElement);
+                },
+                getWeek: function(year, month, day){
+
+                    month += 1; //use 1-12
+                    var a = Math.floor((14-(month))/12);
+                    var y = year+4800-a;
+                    var m = (month)+(12*a)-3;
+                    var jd = null;
+
+                    if (PRIVATE.type === "gregorian"){
+                        // (gregorian calendar)
+                        jd = day + Math.floor(((153*m)+2)/5) +
+                            (365*y) + Math.floor(y/4) - Math.floor(y/100) +
+                            Math.floor(y/400) - 32045;
+                    }
+
+                    if (PRIVATE.type === "julian"){
+                        // (julian calendar)
+                        jd = (day+1)+Math.Round(((153*m)+2)/5)+(365+y) +
+                            Math.round(y/4)-32083;
+                    }
+
+                    //now calc weeknumber according to JD
+                    var d4 = (jd+31741-(jd%7))%146097%36524%1461;
+                    var L = Math.floor(d4/1460);
+                    var d1 = ((d4-L)%365)+L;
+                    return Math.floor(d1/7) + 1;
+                },
+                getWeeks: function(year, month, day){
+                    // Find the last day in month
+                    var lastDay = PUBLIC.findLastDay(month, year);
+
+                    var weeks = [];
+
+                    // Loop through all days to find all weeks in a month
+                    for (var day_loop = 1; day_loop <= lastDay; day_loop++)
+                    {
+                        var week = PRIVATE.getWeek(year, month, day_loop);
+                        // Add week to the Array weeks if it doesn't exist
+                        var weekFound = false;
+                        for (var i = 0; i <= weeks.length; i++)
+                        {
+                            if (week == weeks[i])
+                            {
+                                weekFound = true;
+                                break;
+                            }
+                        }
+                        if (!weekFound)
+                        {
+                            weeks.push(week);
+                        }
+                    }
+                    // Changes below are not necessary they were added so the
+                    // table always had 6 weeks.
+                    // Fix for some months with only 4 weeks
+                    if (weeks.length < 5)
+                    {
+                        weeks.push(weeks[weeks.length-1]+1);
+                        weeks.push(weeks[weeks.length-1]+1);
+                    }
+                    // Make sure there are always 6 weeks returned
+                    if (weeks.length < 6)
+                    {
+                        weeks.push(weeks[weeks.length-1]+1);
+                    }
+                    return weeks;
+                },
+                findNumberOfDaysDifference: function(date, tempDate){
+                // This method returns the day difference between two dates
+                    if (date > tempDate)
+                    {
+                        for (var i = -1; i > -50; i--)
+                        {
+                            tempDate.setDate(tempDate.getDate()+1);
+                            if (tempDate.getDate() == date.getDate())
+                            {
+                                return i;
+                            }
+                        }
+                    }
+                    else if (date < tempDate)
+                    {
+                        for (var i = 1; i < 50; i++)
+                        {
+                            tempDate.setDate(tempDate.getDate()-1);
+                            if (tempDate.getDate() == date.getDate())
+                            {
+                                return i;
+                            }
+                        }
+                    }
+                },
+                setSelectedRow: function(week){
+                    // Find out how many days should be changed
+                    var changeDaysBy = 0;
+                    changeDaysBy = (week - PRIVATE.currentWeek)*7;
+                    var weekCollection = PRIVATE.getWeeks(PRIVATE.currentYear, PRIVATE.currentMonth, PRIVATE.currentDay);
+                    /* Take the current day and add 7 days more 6 times and another loop
+                        for 7 seven days less 6 times. Find the week for those and compare
+                        it with selected week. When done set the new date difference*/
+                    if (changeDaysBy > 100)
+                    {
+                        var tempDate = new Date(currentDate);
+                        for (var i = 0; i < 6; i++)
+                        {
+                            tempDate.setDate(tempDate.getDate()+7);
+                            var tempweek = PRIVATE.getWeek(tempDate.getFullYear(), tempDate.getMonth(), tempDate.getDate());
+                            if (tempweek == week)
+                            {
+                                changeDaysBy = findNumberOfDaysDifference(currentDate, tempDate);
+                                break;
+                            }
+                        }
+                        tempDate = new Date(currentDate);
+                        for (var i = 0; i < 6; i++)
+                        {
+                            tempDate.setDate(tempDate.getDate()-7);
+                            var tempweek = PRIVATE.getWeek(tempDate.getFullYear(), tempDate.getMonth(), tempDate.getDate());
+                            if (tempweek == week)
+                            {
+                                changeDaysBy = PRIVATE.findNumberOfDaysDifference(currentDate, tempDate);
+                                break;
+                            }
+                        }
+                    }
+                    var newDate = new Date(
+                        PRIVATE.currentDate.setDate(
+                            PRIVATE.currentDate.getDate() + changeDaysBy));
+                    PUBLIC.setCurrentDate(newDate);
+                    // Loop through table rows and find the correct week
+                    /*for (var i = 0; i < 6; i++)
+                    {   
+                        var cellid = "cell_id_"+i+"0";
+                        var cellRef = document.getElementById(cellid);
+                        var innerValue = cellRef.innerHTML;
+                        if (innerValue == week)
+                        {
+                            // first remove the color for current row
+                            if(PRIVATE.selectedRow !== null)
+                            {
+                                PRIVATE.selectedRow.style.cssText = "background-color:#f1f0eb";
+                            }
+                            // then set the color for the selected row
+                            var rowRef = document.getElementById(cellRef.parentNode.id);
+                            /* set rowRef to selected Row so it setBackgroundcolor function
+                            doesnt write over its background color */
+                            /*this.selectedRow = rowRef;
+                            rowRef.style.cssText = "background-color:#acc1af";;
+                        }
+                    }*/
+                },
+                getRealDay: function(day){
+                    if (PRIVATE.type === "gregorian"){
+                        var days = [6,0,1,2,3,4,5];
+                    } else if (PRIVATE.type === "julian"){
+                        var days = [0,1,2,3,4,5,6];
+                    }
+                    return days[day];
+                },
+                getLanguage: function(){
+                    var language = new Response.Widgets.Calendar.Text();
+                    language.setLanguage(PRIVATE.language);
+                    return language;
+                },
+                getCalendarHeaderColumns: function(){
+                    if(PRIVATE.type === "gregorian"){
+                        var length = 3;
+                        var weekText = PRIVATE.language.getText("Week");
+                        if (PRIVATE.theme.getThemeSize()
+                                === "small"){
+                            var length = 2;
+                            weekText = weekText.substring(0,1);
+                        }
+                        else if (PRIVATE.theme.getThemeSize()
+                                === "large"){
+                            var length = 9;
+                        }
+                        return [
+                            weekText,
+                            PRIVATE.language.getText("Monday").substring(0,length),
+                            PRIVATE.language.getText("Tuesday").substring(0,length),
+                            PRIVATE.language.getText("Wednesday").substring(0,length),
+                            PRIVATE.language.getText("Thursday").substring(0,length),
+                            PRIVATE.language.getText("Friday").substring(0,length),
+                            PRIVATE.language.getText("Saturday").substring(0,length),
+                            PRIVATE.language.getText("Sunday").substring(0,length)
+                        ];
+                    }
+                    else if (PRIVATE.type === "julian"){
+                        return [
+                            "week",
+                            "sun",
+                            "mon",
+                            "tue",
+                            "wed",
+                            "thu",
+                            "fri",
+                            "sat"
+                        ];
+                    };
+                    return null;
+                },
+                setCalendarHeader: function(month, year){
+                    var calendar = document.createElement('table');
+
+                    // Header row
+                    var headerRow   = calendar.insertRow(-1);
+
+                    headerRow.style.cssText =
+                        PRIVATE.theme.getValue("CalendarTable");
+
+                    /* Header has 5 cells to move month and years back and forward
+                       and to view current month */
+                    var newCellPrevYear  = headerRow.insertCell(-1);
+                    var newCellPrevMonth  = headerRow.insertCell(-1);
+                    var newCellTitle  = headerRow.insertCell(-1);
+                    var newCellNextMonth  = headerRow.insertCell(-1);
+                    var newCellNextYear  = headerRow.insertCell(-1);
+
+                    // Set attributes
+                    newCellPrevYear.innerHTML = "<button>&lt;&lt;</button>";
+                    newCellPrevYear.onclick = function (){
+                        return PUBLIC.setPrevYear();
+                    };
+                    newCellPrevYear.ondblclick = function (){
+                        return PUBLIC.setPrevYear();
+                    };
+
+                    newCellPrevYear.style.cssText =
+                        PRIVATE.theme.getValue("NextPrevMonthButton");
+
+                    newCellPrevMonth.innerHTML = "<button>&lt;</button>";
+                    newCellPrevMonth.onclick = function (){
+                        return PUBLIC.setPrevMonth();
+                    };
+                    newCellPrevMonth.ondblclick = function (){
+                        return PUBLIC.setPrevMonth();
+                    };
+                    newCellPrevMonth.style.cssText =
+                        PRIVATE.theme.getValue("NextPrevMonthButton");
+
+                    newCellTitle.colSpan = "6";
+                    newCellTitle.innerHTML =
+                        PRIVATE.language.getMonthText(month)+" - "+ year;
+
+                    newCellNextMonth.innerHTML = "<button>&gt;</button>";
+                    newCellNextMonth.onclick = function (){
+                        return PUBLIC.setNextMonth();
+                    };
+                    newCellNextMonth.ondblclick = function (){
+                        return PUBLIC.setNextMonth();
+                    };
+                    newCellNextMonth.style.cssText =
+                        PRIVATE.theme.getValue("NextPrevMonthButton");
+
+                    newCellNextYear.innerHTML = "<button>&gt;&gt;</button>";
+                    newCellNextYear.onclick = function (){
+                        return PUBLIC.setNextYear();
+                    };
+                    newCellNextYear.ondblclick = function (){
+                        return PUBLIC.setNextYear();
+                    };
+                    newCellNextYear.style.cssText =
+                        PRIVATE.theme.getValue("NextPrevMonthButton");
+
+                    calendar.style.cssText =
+                        PRIVATE.theme.getValue("CalendarHeaderTable");
+
+                    // Finally render the elements on screen and assign it to a variable
+                    if(PRIVATE.calendarWeekAndDayElement){
+                        PRIVATE.calendarMainElement.insertBefore(
+                            calendar, PRIVATE.calendarWeekAndDayElement
+                        );
+                    } else{
+                        PRIVATE.calendarMainElement.insertBefore(
+                            calendar, null
+                        );
+                    }
+                    PRIVATE.calendarHeaderElement = calendar;
+                },
+                type: type,
+                language: "nb",
+                theme: theme,
+                size: "normal",
+                multiple: multiple,
+                currentDate: null,
+                currentDay: null,
+                currentMonth: null,
+                currentYear: null,
+                currentWeek: null,
+                selectedWeek: null,
+                calendarTableElement: null,
+                calendarMainElement:null,
+                calendarHeaderElement:null,
+                calendarBottomElement:null,
+                todaysDate: new Date().toDateString(),
+                selectedDate: null,
+                calendarId: null,
+                theme: new Response.Widgets.Calendar.Themes.ThemeObject(),
+                inputElement: inputElement,
+                isRendered: false
+            };
+            var PUBLIC = {
+                setCurrentDate: function(date){
+                    PRIVATE.currentDate = date;
+                    PRIVATE.currentYear= date.getFullYear();
+                    PRIVATE.currentMonth= date.getMonth();
+                    PRIVATE.currentDay = date.getDate();
+                    PRIVATE.currentWeek =
+                        PRIVATE.getWeek(
+                            PRIVATE.currentYear,
+                            PRIVATE.currentMonth,
+                            PRIVATE.currentDay
+                        );
+                },
+                drawCalendar: function(){
+                    if(!PRIVATE.selectedDate){
+                        PRIVATE.selectedDate = PRIVATE.currentDate.toDateString();
+                    }
+                    document.body.appendChild(PRIVATE.calendarMainElement);
+                    var year = PRIVATE.currentDate.getFullYear();
+                    var month = PRIVATE.currentDate.getMonth();
+                    var day = PRIVATE.currentDate.getDate();
+                    var week = PRIVATE.getWeek(year, month, day).toString();;
+                    // Set correct year and month in the table header
+                    PRIVATE.setCalendarHeader(month, year);
+
+                    // Create rowArray
+                    var rowArray = [];
+                    // Create cellArray for the columns
+                    var cells = PRIVATE.getCalendarHeaderColumns();
+                    /*  Calculate number of needed rows
+                    *   Loop through all the days in chosen month
+                    *   Add all weeks found into an Array
+                    *  Build rowarray based on number of weeks */
+                    var addDays = 1;
+                    var weekCollection = PRIVATE.getWeeks(year, month, day);
+                    var lastdate;
+
+                    // Create the first row which is week and daynames
+                    PRIVATE.createCalendarWeekAndDayRow(PRIVATE.calendarTableElement);
+
+                    // Create the rest of the rows
+                    for (var weeknr = 0; weeknr < weekCollection.length; weeknr++){
+                        // Insert a row in the table as last row
+                        var newRow   = PRIVATE.calendarTableElement.insertRow(-1);
+                        newRow.id = "row_id_" + weeknr;
+                        // A check to make sure row 6 get correct dates
+                        if (addDays > PUBLIC.findLastDay(month, year)){
+                            month += 1;
+                            if(lastdate < 10){
+                                addDays = lastdate+1;
+                            }
+                            else{
+                                addDays = 1;
+                            }
+                        }
+                        /*  First find days in the selected week based on day
+                            number. Adddays increases with 7 days for each loop*/
+                        var dayDate = PUBLIC.findFirstDay(month, year, addDays);
+                        /*  This method returns the other days in the same week
+                            as the date parameter, for each loop we find next week */
+                        var days = PUBLIC.getDatesInWeek(dayDate);
+                        // start looping
+                        for (var i = 0; i < cells.length; i++){
+                            // Insert a cell in the row at index 0
+                            var newCell  = newRow.insertCell(-1);
+                            newCell.className = "calendarcells";
+                            newCell.id = "cell_id_" + weeknr.toString()+i.toString();
+                            // Do something else for the week column
+                            if (i === 0){
+                                    newCell.style.cssText =
+                                        PRIVATE.theme.getValue("smallTextCell");
+                            }
+                            else{
+                                    newCell.onmouseover = function (){
+                                        return PUBLIC.litCell(this);
+                                    };
+                                    newCell.onmouseout = function (){
+                                        return PUBLIC.unlitCell(this);
+                                    };
+                                    newCell.onclick = function (){
+                                        return PUBLIC.selectDate(
+                                            PRIVATE.inputElement, this.innerHTML
+                                        );
+                                    };
+                                    newCell.style.cssText =
+                                        PRIVATE.theme.getValue("CalendarDefaultBackgroundColor");
+                            }
+                            //  Fill cells with data
+                            // Append a text node to the cell
+                            var newText;
+                            if (i === 0){
+                                newText  = document.createTextNode(weekCollection[weeknr]);
+                                newCell.className = "week";
+                            }
+                            else{
+                                newText  = document.createTextNode(days[i-1].getDateNumber());
+                                // set lastdate for the addday > findlastday check
+                                lastdate = days[i-1].getDateNumber();
+                                // Check if day is in this month, set color to grey
+                                // and remove functions
+                                if (!days[i-1].getThisMonth()){
+                                    newCell.style.cssText =
+                                        PRIVATE.theme.getValue("LightGreyText");
+                                    newCell.onmouseover = function (){
+                                        return null;
+                                    };
+                                    newCell.onmouseout = function (){
+                                        return null;
+                                    };
+                                    newCell.onclick = function (){
+                                        return null;
+                                    };
+                                }
+                                // Check if day is today, lit the cell if so
+                                if (days[i-1].isToday()){
+                                    newCell.style.cssText =
+                                        PRIVATE.theme.getValue("CalendarTodayColors");
+                                    newCell.className = "Response-TodaysDate-Cell";
+                                }
+                                // Check if day is selectedDay, lit the cell if so
+                                if (days[i-1].isSelectedDate()){
+                                    newCell.style.cssText =
+                                        PRIVATE.theme.getValue("CalendarSelectedColors");
+                                    newCell.className = "Response-SelectedDate-Cell";
+                                }
+                            }
+                            newCell.appendChild(newText);
+                        }
+                        addDays += 7;
+                    }
+                    // Add go to today button
+                    PRIVATE.calendarBottomElement = document.createElement('table');
+                    PRIVATE.calendarBottomElement.style.cssText = "width:100%;"
+                    newRow = PRIVATE.calendarBottomElement.insertRow(-1);
+                    newRow.id = "rcalendar_todaybutton";
+                    // Add three cells
+                    for (i = 0; i < 3; i++){
+                        newCell  = newRow.insertCell(-1);
+                        newCell.className = "rcalendar_todaybutton_cells";
+                        newCell.id = "cell_todaybutton_id_"+i;
+                        if(i == 1){
+                            newCell.innerHTML = "<button>"+
+                                PRIVATE.language.getText("Today")+
+                                "</button>";
+                            newCell.style.cssText =
+                                PRIVATE.theme.getValue("todaybutton");
+                            newCell.onclick = function (){
+                                return PRIVATE.setNewDate(new Date());
+                            };
+                        }
+                        else{
+                            newCell.style.cssText =
+                                PRIVATE.theme.getValue("todaycell");
+                        }
+                    }
+                    // Find existing data for selected rows
+                    // findExistingTimeRecordingData();
+                    PRIVATE.calendarMainElement.appendChild(PRIVATE.calendarBottomElement);
+                    PRIVATE.calendarMainElement.appendChild(PRIVATE.calendarTableElement);
+                },
+                findFirstDay: function(month, year, days){
+                    var newDate = new Date(year,month, days);
+                    return newDate;
+                },
+                findLastDay: function(month, year){
+                    var newDate = new Date(year,month);
+                    //the fewest number of days in a month
+                    var daysInMonth = 28;
+                    //Set a variable to check on the while loop
+                    var dateFound = false;
+
+                    while (!dateFound)
+                    {
+                        //create the next possible day
+                        newDate.setDate(daysInMonth+1);
+                        //new month date
+                        var newMonth = newDate.getMonth();
+                        //if the month has changed
+                        if (newMonth != month)
+                        {
+                            dateFound = true;
+                        }
+                        else
+                        {
+                            daysInMonth++;
+                        }
+                    }
+                    return daysInMonth;
+                },
+                getDatesInWeek: function(date){
+                    // Create week array
+                    var days = new Array(7);
+                    // Find the real daynumber in week not the JS daynumber
+                    var dayNumber = PRIVATE.getRealDay(date.getDay());
+                    var dayadd = 0;
+                    /*  These two loops add the days after current date and
+                        the days before current for one week */
+                    for (var day = dayNumber; day < days.length; day++)
+                    {
+                        var newDate = new Date(date);
+                        if (dayadd !== 0)
+                        {
+                            newDate.setDate(newDate.getDate() + dayadd);
+                        }
+                        days[day] = newDate;
+                        dayadd++;
+                    }
+                    var daysubtract = 0;
+                    for (var day = dayNumber; day >= 0; day--)
+                    {
+                        var newDate = new Date(date);
+                        newDate.setDate(newDate.getDate() + daysubtract);
+                        days[day] = newDate;
+                        daysubtract--;
+                    }
+                    /*  Loop through all days and find out if they're from
+                        this month or not */
+                    var dayReferences = new Array();
+                    for (var i = 0; i < 7; i++)
+                    {
+                        // Create Object Reference
+                        var dateObject = new Response.Widgets.Calendar.DateObject();
+                        dateObject.setFullDate(days[i].getFullYear()+"-"+(days[i].getMonth()+1)+"-"+days[i].getDate());
+                        dateObject.setDateNumber(days[i].getDate());
+                        dateObject.setMonthNumber(days[i].getMonth());
+                        // Set to true if in this month
+                        if (PRIVATE.currentDate.getMonth() == days[i].getMonth()){
+                            dateObject.setThisMonth(true);
+                        }
+                        else{
+                            dateObject.setThisMonth(false);
+                        }
+                        // Set to true if in this day
+                        if (PRIVATE.todaysDate === days[i].toDateString()){
+                            dateObject.setToday(true);
+                        }
+                        else{
+                            dateObject.setToday(false);
+                        }
+                        // Set to true if is selectedDate day;
+                        if (PRIVATE.selectedDate === days[i].toDateString()){
+                            dateObject.setSelectedDate(true);
+                        }
+                        else{
+                            dateObject.setSelectedDate(false);
+                        }
+                        dayReferences.push(dateObject);
+                    }
+                    return dayReferences;
+                },
+                setNextMonth: function(){
+                    var newDate = new Date(PRIVATE.currentDate.setMonth(PRIVATE.currentDate.getMonth()+1));
+                    PRIVATE.setNewDate(newDate);
+                },
+                setPrevMonth: function(){
+                    var newDate = new Date(PRIVATE.currentDate.setMonth(PRIVATE.currentDate.getMonth()-1));
+                    PRIVATE.setNewDate(newDate);
+                },
+                setNextYear: function(){
+                    var newDate = new Date(PRIVATE.currentDate.setFullYear(PRIVATE.currentDate.getFullYear()+1));
+                    PRIVATE.setNewDate(newDate);
+                },
+                setPrevYear: function(){
+                    var newDate = new Date(PRIVATE.currentDate.setFullYear(PRIVATE.currentDate.getFullYear()-1));
+                    PRIVATE.setNewDate(newDate);
+                },
+                litCell: function(cell){
+                    cell.style.cssText =
+                    PRIVATE.theme.getValue("CalendarDefaultHighLightColor");
+                },
+                unlitCell: function(cell){
+                    if (cell.className === "Response-TodaysDate-Cell"){
+                        cell.style.cssText =
+                            PRIVATE.theme.getValue("CalendarTodayColors");
+                    }
+                    else if (cell.className === "Response-SelectedDate-Cell"){
+                        cell.style.cssText =
+                            PRIVATE.theme.getValue("CalendarSelectedColors");
+                    }
+                    else{
+                        cell.style.cssText =
+                            PRIVATE.theme.getValue("CalendarDefaultBackgroundColor");
+                    }
+                },
+                selectDate: function(element, day){
+                    var m = (PRIVATE.currentMonth+1).toString();
+                    var d = day.toString();
+                    if (m.length == 1){
+                        m = "0" +m;
+                    }
+                    if (d.length == 1){
+                        d = "0" +d;
+                    }
+                    element.value =
+                        PRIVATE.currentYear+
+                        "-"+
+                        m+
+                        "-"+
+                        d;
+                    PUBLIC.removeCalendar();
+                },
+                removeCalendar: function(){
+                    if(PRIVATE.calendarMainElement.parentNode){
+                        PRIVATE.calendarMainElement.parentNode.removeChild(
+                            PRIVATE.calendarMainElement
+                        );
+                    }
+                },
+                isRendered: function(){
+                    return PRIVATE.isRendered;
+                },
+                setIsRendered: function(value){
+                    PRIVATE.isRendered = value;
+                }
+            };
+            PRIVATE.calendarId = Response.Widgets.Calendar.CalendarObjectCounter;
+
+            // Set default values
+            PRIVATE.language = PRIVATE.getLanguage();
+
+            if(date){
+                PUBLIC.setCurrentDate(date);
+            }
+            else{
+                PUBLIC.setCurrentDate(new Date());
+            }
+            if(type){
+                PRIVATE.type = type;
+            }
+            else{
+                PRIVATE.type= "gregorian";
+            }
+            if(theme && size){
+                PRIVATE.theme.setTheme(theme, size, PRIVATE.inputElement);
+            }
+            else{
+                PRIVATE.theme.setTheme("default", "normal", PRIVATE.inputElement);
+            }
+
+            PRIVATE.calendarTableElement = PRIVATE.createCalendarTableElement();
+            PRIVATE.calendarMainElement = PRIVATE.createCalendarMainElement();
+            return PUBLIC;
+        }
+    };
+})();
+
+
+
+Response.Widgets.Calendar.Themes = (function(){
+    return {
+        ThemeObject: function(){
+            var defaultTheme = new Response.Collections.Dictionary();
+            var defaultTheme2 = new Response.Collections.Dictionary();
+
+            var PRIVATE = {
+                element: null,
+                themes: [defaultTheme, defaultTheme2],
+                currentTheme: defaultTheme,
+                themeSize: "normal",
+                createTheme: function(){
+                    // Default is normal size
+                    //toFixed(1);
+                    var smallTextCellFontSize = 0.6;
+                    var calendarDayWeekCellSizeWidth = 30;
+                    var calendarDayWeekCellSizeHeight = 16;
+                    var calendarCellSizeWidth = 32 ;
+                    var calendarCellSizeHeight = 24 ;
+                    var calendarTableWidth = 274;
+                    var nextPrevMonthButton = 24;
+                    var calendarMainElementPadding = 4;
+                    var textFontSize = 1.0;
+                    var cellTextFontSize = 0.9;
+                    if (PRIVATE.themeSize === "small"){
+                        smallTextCellFontSize = 0.7;
+                        calendarDayWeekCellSizeWidth = 23;
+                        calendarDayWeekCellSizeHeight = 10;
+                        calendarCellSizeWidth = 28;
+                        calendarCellSizeHeight = 12;
+                        calendarTableWidth = 220;
+                        nextPrevMonthButton = 12;
+                        calendarMainElementPadding = 4;
+                        textFontSize = 0.75;
+                        cellTextFontSize = 0.7;
+                    }
+                    else if (PRIVATE.themeSize === "large"){
+                        smallTextCellFontSize = 0.8;
+                        calendarDayWeekCellSizeWidth = 76;
+                        calendarDayWeekCellSizeHeight = 32;
+                        calendarCellSizeWidth = 32;
+                        calendarCellSizeHeight = 36;
+                        calendarTableWidth = 644;
+                        nextPrevMonthButton = 24;
+                        calendarMainElementPadding = 8;
+                        textFontSize = 1.2;
+                        cellTextFontSize = 1.0;
+                    }
+                    defaultTheme.add("name", "default");
+                    defaultTheme.add("LightGreyText", "color:#cccccc;");
+                    defaultTheme.add("todaybutton", "width:50%;text-align: center;");
+                    defaultTheme.add("todaycell", "width:25%;");
+                    defaultTheme.add("TableBorder", "border:1px black solid;");
+                    defaultTheme.add("TextAlignCenter", "text-align:center;");
+                    defaultTheme.add("smallTextCell",
+                                        "font-size:"+smallTextCellFontSize+"em;"+
+                                        "color:#333333;"+
+                                        "width:32px;height:24px;");
+                    defaultTheme.add("CalendarDayWeekCellSize",
+                                        "width:"+calendarDayWeekCellSizeWidth+"px;"+
+                                        "height:"+calendarDayWeekCellSizeHeight+"px;");
+                    defaultTheme.add("CalendarDefaultBackgroundColor",
+                                        "font-size:"+cellTextFontSize+"em;"+
+                                        "background:#FDFBFF;"+
+                                        "border:1px solid #E6E6E6;"+
+                                        "width:"+calendarCellSizeWidth+"px;"+
+                                        "height:"+calendarCellSizeHeight+"px;");
+                    defaultTheme.add("CalendarDefaultHighLightColor",
+                                        "font-size:"+cellTextFontSize+"em;"+
+                                        "background:#C2C7E7;"+
+                                        "border-radius:0.5em;"+
+                                        "border:1px solid #888AA0;"+
+                                        "cursor:pointer;"+
+                                        "width:"+calendarCellSizeWidth+"px;"+
+                                        "height:"+calendarCellSizeHeight+"px;");
+                    defaultTheme.add("CalendarTodayColors",
+                                        "font-size:"+cellTextFontSize+"em;"+
+                                        "background:#FFC2B5;"+
+                                        "border-radius:0.5em;"+
+                                        "border:1px solid #EF9584;"+
+                                        "cursor:pointer;"+
+                                        "width:"+calendarCellSizeWidth+"px;"+
+                                        "height:"+calendarCellSizeHeight+"px;");
+                    defaultTheme.add("CalendarSelectedColors",
+                                        "font-size:"+cellTextFontSize+"em;"+
+                                        "background:#E2EAC2;"+
+                                        "border-radius:0.5em;"+
+                                        "border:1px solid #C3CC9E;"+
+                                        "cursor:pointer;"+
+                                        "width:"+calendarCellSizeWidth+"px;"+
+                                        "height:"+calendarCellSizeHeight+"px;");
+                    defaultTheme.add("CalendarTable",
+                                        "font-size:"+textFontSize+"em;"+
+                                        "width:"+calendarTableWidth+"px;"+
+                                        "text-align:center;");
+                    defaultTheme.add("CalendarHeaderTable",
+                                        "background:#C5DDEE;"+
+                                        "border:1px solid #53A2DA;"+
+                                        "width:"+calendarTableWidth+"px;"+
+                                        "text-align:center;"+
+                                        "border-radius:0.5em;"+
+                                        "color:#333333;");
+                    defaultTheme.add("NextPrevMonthButton",
+                                        "border-radius:0.5em;"+
+                                        "width:"+nextPrevMonthButton+"px;");
+                    defaultTheme.add("CalendarMainElement",
+                                        "background:#F6F9FD;"+
+                                        "border:1px solid #E2E7ED;"+
+                                        "border-radius:0.5em;"+
+                                        "z-index:100;"+
+                                        "position:absolute;"+
+                                        "top:"+(PRIVATE.element.offsetTop)+"px;"+
+                                        "left:"+(PRIVATE.element.offsetWidth+40)+"px;"+
+                                        "padding:"+calendarMainElementPadding+"px;"+
+                                        "display:table;");
+                }
+            };
+            var PUBLIC = {
+                setTheme: function(themeName, size, element){
+                    PRIVATE.element = element;
+                    PRIVATE.themeSize = size;
+                    PRIVATE.createTheme();
+                    for (var i = 0; i < PRIVATE.themes.length; i++){
+                        if (PRIVATE.themes[i].getValue("name") === themeName){
+                            PRIVATE.currentTheme = PRIVATE.themes[i];
+                        }
+                    }
+                },
+                getValue: function(key){
+                    return PRIVATE.currentTheme.getValue(key);
+                },
+                getThemeSize: function(){
+                    return PRIVATE.themeSize;
+                }
+            };
+            return PUBLIC;
+        }
+    };
+})();
+
+Response.Widgets.Calendar.Events = (function (){
+    var PUBLIC = {
+        calendar: null,
+        show: false,
+        showCalendar: function(element){
+            if(PUBLIC.calendar){
+                PUBLIC.calendar.removeCalendar();
+            }
+            PUBLIC.calendar = new Response.Widgets.Calendar.CalendarObject(element.previousSibling);
+            // Set correct date
+            var date = null;
+            if(element.previousSibling.value !== ""){
+                if(Response.Utilities.clientBrowserIsInternetExplorer()){
+                    var datesplit = element.previousSibling.value.split("-");
+                    date = new Date(datesplit[0],datesplit[1]-1,datesplit[2]);
+                }
+                else{
+                    date = new Date(element.previousSibling.value);
+                }
+                PUBLIC.calendar.setCurrentDate(date);
+            }
+            PUBLIC.calendar.drawCalendar();
+        },
+        outsideClick: function(){
+            if(PUBLIC.calendar){
+                if(PUBLIC.calendar.isRendered()){
+                    PUBLIC.calendar.removeCalendar();
+                    PUBLIC.calendar = null;
+                }
+                else{
+                    PUBLIC.calendar.setIsRendered(true);
+                }
+            }
+        }
+    };
+    return PUBLIC;
+})();
+    </script>
+<div onclick="Response.Widgets.Calendar.Events.outsideClick();" style="background:lightblue;height:500px;">
+    <input type="text" value="" style="float:left;"/><img src="calendar.png"
+        alt=""
+        onclick="Response.Widgets.Calendar.Events.showCalendar(this);"
+        style="float:left;"/>
+    <br style="clear:left;"/>
+    <input type="text" value="" style="float:left;"/><img src="calendar.png"
+        alt=""
+        onclick="Response.Widgets.Calendar.Events.showCalendar(this);"
+        style="float:left;"/>
+</div>
+</body>
+</html>
