@@ -2,16 +2,16 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-    <title>Response-JSCalendar</title>
+    <title>jsCalendar</title>
 </head>
 <body>
 <script type="text/javascript">
-if (typeof Response == 'undefined'){
-    var Response = {};
-    Response.Widgets = {};
+if (typeof backupbay == 'undefined'){
+    var backupbay = {};
+    backupbay.Widgets = {};
 }
 
-Response.Utilities = (function(){
+backupbay.Utilities = (function(){
     var startPos = navigator.appVersion.indexOf("MSIE");
     var PUBLIC = {
         clientBrowserIsInternetExplorer: function()
@@ -46,7 +46,7 @@ Response.Utilities = (function(){
     return PUBLIC;
 })();
 
-Response.Collections = (function() {
+backupbay.Collections = (function() {
     return {
         Dictionary: function(){
             var self = {};
@@ -81,7 +81,7 @@ Response.Collections = (function() {
     };
 })();
 
-Response.Collections.Cookie = (function() {
+backupbay.Collections.Cookie = (function() {
     var PUBLIC = {
         deleteCookie: function(key){
             key +="=";
@@ -96,9 +96,9 @@ Response.Collections.Cookie = (function() {
     }; return PUBLIC;
 })();
 
-Response.Widgets.Window = (function () {
+backupbay.Widgets.Window = (function () {
     var self = {};
-    self.windows = new Response.Collections.Dictionary();
+    self.windows = new backupbay.Collections.Dictionary();
     return {
         getWindows: function(){
             return self.windows;
@@ -126,7 +126,7 @@ Response.Widgets.Window = (function () {
         CreateWindow: function(width, height, top, left, html, id){
             // If dialog exists, do not create a new dialog
             if(!self.windows.exist(id)){
-                var dialog = new Response.Widgets.Window.Window(width, height, top, left, id);
+                var dialog = new backupbay.Widgets.Window.Window(width, height, top, left, id);
                 dialog.setHTML(html);
                 document.getElementById("body").appendChild(dialog.element);
                 self.windows.add(dialog.id,dialog);
@@ -142,7 +142,7 @@ Response.Widgets.Window = (function () {
         },
         CreateTitleWindow: function(text){
             if(!self.windows.exist("response_title_window")){
-                var dialog = new Response.Widgets.Window.Window("auto", "auto", "auto", "auto", "response_title_window");
+                var dialog = new backupbay.Widgets.Window.Window("auto", "auto", "auto", "auto", "response_title_window");
                 dialog.setHTML(text);
                 dialog.element.style.padding = "0.5em";
                 document.getElementById("response_calendar_day_title").appendChild(dialog.element);
@@ -154,7 +154,7 @@ Response.Widgets.Window = (function () {
 })();
 
 
-Response.Widgets.Calendar = (function () {
+backupbay.Widgets.Calendar = (function () {
     return {
         CalendarObjectCounter: 0,
         DateObject: function(){
@@ -203,7 +203,7 @@ Response.Widgets.Calendar = (function () {
         },
         Text: function(){
             // English Text
-            var englishTexts = new Response.Collections.Dictionary();
+            var englishTexts = new backupbay.Collections.Dictionary();
             englishTexts.add("language", "en");
             englishTexts.add("January", "January");
             englishTexts.add("February", "February");
@@ -228,7 +228,7 @@ Response.Widgets.Calendar = (function () {
             englishTexts.add("Today", "Today");
 
             // Nynorsk Norwegian Text
-            var nynorskTexts = new Response.Collections.Dictionary();
+            var nynorskTexts = new backupbay.Collections.Dictionary();
             nynorskTexts.add("language", "nn");
             nynorskTexts.add("January", "Januar");
             nynorskTexts.add("February", "Februar");
@@ -253,7 +253,7 @@ Response.Widgets.Calendar = (function () {
             nynorskTexts.add("Today", "Idag");
 
             // Bokmål Norwegian Text
-            var bokmaalTexts = new Response.Collections.Dictionary();
+            var bokmaalTexts = new backupbay.Collections.Dictionary();
             bokmaalTexts.add("language", "nb");
             bokmaalTexts.add("January", "Januar");
             bokmaalTexts.add("February", "Februar");
@@ -329,12 +329,12 @@ Response.Widgets.Calendar = (function () {
             return PUBLIC;
         },
         CalendarObject: function(inputElement, date, type, lang, theme, size, multiple){
-            Response.Widgets.Calendar.CalendarObjectCounter += 1;
+            backupbay.Widgets.Calendar.CalendarObjectCounter += 1;
             var PRIVATE = {
                 createCalendarMainElement: function(){
                     var mainElement = document.createElement('span');
                     mainElement.id =
-                        "ResponseCalendarMainElement"+PRIVATE.calendarId;
+                        "backupbayCalendarMainElement"+PRIVATE.calendarId;
                     mainElement.style.cssText =
                         PRIVATE.theme.getValue("CalendarMainElement");
                     return mainElement;
@@ -356,7 +356,7 @@ Response.Widgets.Calendar = (function () {
                 createCalendarTableElement: function(){
                     var table = document.createElement('table');
                     table.id =
-                        "ResponseCalendarTable"+PRIVATE.calendarId;
+                        "backupbayCalendarTable"+PRIVATE.calendarId;
                     table.style.cssText =
                         PRIVATE.theme.getValue("CalendarTable");
                     return table;
@@ -536,7 +536,7 @@ Response.Widgets.Calendar = (function () {
                     return days[day];
                 },
                 getLanguage: function(){
-                    var language = new Response.Widgets.Calendar.Text();
+                    var language = new backupbay.Widgets.Calendar.Text();
                     language.setLanguage(PRIVATE.language);
                     return language;
                 },
@@ -674,7 +674,7 @@ Response.Widgets.Calendar = (function () {
                 todaysDate: new Date().toDateString(),
                 selectedDate: null,
                 calendarId: null,
-                theme: new Response.Widgets.Calendar.Themes.ThemeObject(),
+                theme: new backupbay.Widgets.Calendar.Themes.ThemeObject(),
                 inputElement: inputElement,
                 isRendered: false
             };
@@ -795,13 +795,13 @@ Response.Widgets.Calendar = (function () {
                                 if (days[i-1].isToday()){
                                     newCell.style.cssText =
                                         PRIVATE.theme.getValue("CalendarTodayColors");
-                                    newCell.className = "Response-TodaysDate-Cell";
+                                    newCell.className = "backupbay-TodaysDate-Cell";
                                 }
                                 // Check if day is selectedDay, lit the cell if so
                                 if (days[i-1].isSelectedDate()){
                                     newCell.style.cssText =
                                         PRIVATE.theme.getValue("CalendarSelectedColors");
-                                    newCell.className = "Response-SelectedDate-Cell";
+                                    newCell.className = "backupbay-SelectedDate-Cell";
                                 }
                             }
                             newCell.appendChild(newText);
@@ -899,7 +899,7 @@ Response.Widgets.Calendar = (function () {
                     for (var i = 0; i < 7; i++)
                     {
                         // Create Object Reference
-                        var dateObject = new Response.Widgets.Calendar.DateObject();
+                        var dateObject = new backupbay.Widgets.Calendar.DateObject();
                         dateObject.setFullDate(days[i].getFullYear()+"-"+(days[i].getMonth()+1)+"-"+days[i].getDate());
                         dateObject.setDateNumber(days[i].getDate());
                         dateObject.setMonthNumber(days[i].getMonth());
@@ -949,11 +949,11 @@ Response.Widgets.Calendar = (function () {
                     PRIVATE.theme.getValue("CalendarDefaultHighLightColor");
                 },
                 unlitCell: function(cell){
-                    if (cell.className === "Response-TodaysDate-Cell"){
+                    if (cell.className === "backupbay-TodaysDate-Cell"){
                         cell.style.cssText =
                             PRIVATE.theme.getValue("CalendarTodayColors");
                     }
-                    else if (cell.className === "Response-SelectedDate-Cell"){
+                    else if (cell.className === "backupbay-SelectedDate-Cell"){
                         cell.style.cssText =
                             PRIVATE.theme.getValue("CalendarSelectedColors");
                     }
@@ -993,7 +993,7 @@ Response.Widgets.Calendar = (function () {
                     PRIVATE.isRendered = value;
                 }
             };
-            PRIVATE.calendarId = Response.Widgets.Calendar.CalendarObjectCounter;
+            PRIVATE.calendarId = backupbay.Widgets.Calendar.CalendarObjectCounter;
 
             // Set default values
             PRIVATE.language = PRIVATE.getLanguage();
@@ -1026,11 +1026,11 @@ Response.Widgets.Calendar = (function () {
 
 
 
-Response.Widgets.Calendar.Themes = (function(){
+backupbay.Widgets.Calendar.Themes = (function(){
     return {
         ThemeObject: function(){
-            var defaultTheme = new Response.Collections.Dictionary();
-            var defaultTheme2 = new Response.Collections.Dictionary();
+            var defaultTheme = new backupbay.Collections.Dictionary();
+            var defaultTheme2 = new backupbay.Collections.Dictionary();
 
             var PRIVATE = {
                 element: null,
@@ -1039,8 +1039,7 @@ Response.Widgets.Calendar.Themes = (function(){
                 themeSize: "normal",
                 createTheme: function(){
                     // Default is normal size
-                    //toFixed(1);
-                    var smallTextCellFontSize = 0.6;
+                    var smallTextCellFontSize = 0.7;
                     var calendarDayWeekCellSizeWidth = 30;
                     var calendarDayWeekCellSizeHeight = 16;
                     var calendarCellSizeWidth = 32 ;
@@ -1048,7 +1047,7 @@ Response.Widgets.Calendar.Themes = (function(){
                     var calendarTableWidth = 274;
                     var nextPrevMonthButton = 24;
                     var calendarMainElementPadding = 4;
-                    var textFontSize = 1.0;
+                    var textFontSize = 0.9;
                     var cellTextFontSize = 0.9;
                     if (PRIVATE.themeSize === "small"){
                         smallTextCellFontSize = 0.7;
@@ -1166,7 +1165,7 @@ Response.Widgets.Calendar.Themes = (function(){
     };
 })();
 
-Response.Widgets.Calendar.Events = (function (){
+backupbay.Widgets.Calendar.Events = (function (){
     var PUBLIC = {
         calendar: null,
         show: false,
@@ -1174,11 +1173,11 @@ Response.Widgets.Calendar.Events = (function (){
             if(PUBLIC.calendar){
                 PUBLIC.calendar.removeCalendar();
             }
-            PUBLIC.calendar = new Response.Widgets.Calendar.CalendarObject(element.previousSibling);
+            PUBLIC.calendar = new backupbay.Widgets.Calendar.CalendarObject(element.previousSibling);
             // Set correct date
             var date = null;
             if(element.previousSibling.value !== ""){
-                if(Response.Utilities.clientBrowserIsInternetExplorer()){
+                if(backupbay.Utilities.clientBrowserIsInternetExplorer()){
                     var datesplit = element.previousSibling.value.split("-");
                     date = new Date(datesplit[0],datesplit[1]-1,datesplit[2]);
                 }
@@ -1204,15 +1203,15 @@ Response.Widgets.Calendar.Events = (function (){
     return PUBLIC;
 })();
     </script>
-<div onclick="Response.Widgets.Calendar.Events.outsideClick();" style="background:lightblue;height:500px;">
+<div onclick="backupbay.Widgets.Calendar.Events.outsideClick();" style="background:lightblue;height:500px;">
     <input type="text" value="" style="float:left;"/><img src="calendar.png"
         alt=""
-        onclick="Response.Widgets.Calendar.Events.showCalendar(this);"
+        onclick="backupbay.Widgets.Calendar.Events.showCalendar(this);"
         style="float:left;"/>
     <br style="clear:left;"/>
     <input type="text" value="" style="float:left;"/><img src="calendar.png"
         alt=""
-        onclick="Response.Widgets.Calendar.Events.showCalendar(this);"
+        onclick="backupbay.Widgets.Calendar.Events.showCalendar(this);"
         style="float:left;"/>
 </div>
 </body>
